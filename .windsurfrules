@@ -1,0 +1,32 @@
+# Frameworks
+1. Auth: custom password
+2. Backend: FastAPI
+3. Package Manager: Poetry
+4. Deployment: Vercel
+
+# Architecture
+1. Backend (FastAPI)
+- Endpoints:
+  - POST /download: Takes user_id, start_date, end_date. Returns a job_id and summary (e.g., count of messages, success/failure).
+  - POST /extract: Takes job_id, and optionally a narrower start_date/end_date. Returns processed messages or a file link.
+  - GET /health: Simple health check returning 200.
+- Services:
+  - Slack API (already implemented in api folder)
+- Data Storage:
+  - Store downloaded data either in-memory
+- Environment Variables:
+  - SLACK_BOT_TOKEN must be set in Vercel’s environment. Access via os.getenv("SLACK_BOT_TOKEN").
+
+2. Deployment on Vercel
+
+# Project Structure:
+slack_extractor/
+├── api/ (FastAPI code)
+├── vercel.json
+├── pyproject.toml            # Poetry config
+├── poetry.lock               # Poetry lock file
+
+# Configuration:
+vercel.json includes necessary rewrites (e.g., /api/* -> serverless FastAPI).
+Environment variables for Slack token, possibly log level.
+Docker or serverless Python function approach (depending on the chosen method).
