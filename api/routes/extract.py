@@ -84,7 +84,7 @@ async def extract_messages(
             "extracted_message_count": count,
             "output_file_url": f"/api/files/{extract_id}",
             "output_content_url": f"/api/files/{extract_id}/content",  
-            "messages": formatted_messages[:10] if count > 0 else []  
+            "messages": formatted_messages  
         }
         
     except HTTPException:
