@@ -11,6 +11,7 @@ from api.routes import download, extract, files, health
 # Load environment variables
 load_dotenv(override=True)
 
+# Test comment to verify pre-commit hook functionality
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
