@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 
 from api.routes import download, extract, files, health
+from api.utils.helpers import is_vercel_environment
 
 # Load environment variables
 load_dotenv(override=True)
@@ -41,10 +42,15 @@ app.include_router(extract.router, prefix="/api", tags=["extract"])
 app.include_router(files.router, prefix="/api", tags=["files"])
 app.include_router(health.router, prefix="/api", tags=["health"])
 
-# Make sure the required directories exist
-os.makedirs('jobs', exist_ok=True)
-os.makedirs('extracts', exist_ok=True)
-os.makedirs('frontend', exist_ok=True)
+# Check if we're running on Vercel (serverless environment)
+if not is_vercel_environment():
+    # Make sure the required directories exist for local development
+    os.makedirs('jobs', exist_ok=True)
+    os.makedirs('extracts', exist_ok=True)
+    os.makedirs('frontend', exist_ok=True)
+else:
+    # Log that we're in a serverless environment
+    logging.info("Running in serverless environment (Vercel). Using in-memory storage instead of filesystem.")
 
 # Redirect root to frontend
 @app.get("/")

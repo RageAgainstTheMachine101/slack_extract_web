@@ -1,11 +1,13 @@
 import logging
+import os
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from api.utils.helpers import get_slack_token, date_to_timestamp
+from api.utils.helpers import get_slack_token, date_to_timestamp, is_vercel_environment
+from api.utils.memory_storage import save_extract_data_to_memory
 
 class SlackExtractService:
     def __init__(self):
@@ -131,13 +133,26 @@ class SlackExtractService:
         return formatted_messages, len(formatted_messages)
 
     def save_to_file(self, formatted_messages: List[str], file_path: str) -> bool:
-        """Save formatted messages to a text file."""
+        """Save formatted messages to a text file or in-memory storage."""
         try:
-            self.logger.info(f"Writing formatted messages to {file_path}")
-            with open(file_path, 'w', encoding='utf-8') as txt_file:
-                for text in formatted_messages:
-                    txt_file.write(text + '\n\n')  # Add two newlines between messages for readability
-            return True
+            if is_vercel_environment():
+                # Extract the filename from the path
+                extract_id = os.path.basename(file_path).split('.')[0]
+                self.logger.info(f"Saving formatted messages to in-memory storage with key {extract_id}")
+                
+                # Join messages with double newlines for readability
+                content = '\n\n'.join(formatted_messages)
+                
+                # Save to in-memory storage
+                save_extract_data_to_memory(extract_id, content)
+                return True
+            else:
+                # Use filesystem storage locally
+                self.logger.info(f"Writing formatted messages to {file_path}")
+                with open(file_path, 'w', encoding='utf-8') as txt_file:
+                    for text in formatted_messages:
+                        txt_file.write(text + '\n\n')  # Add two newlines between messages for readability
+                return True
         except Exception as e:
-            self.logger.error(f"Error writing to file: {e}")
+            self.logger.error(f"Error writing to file or memory: {e}")
             return False

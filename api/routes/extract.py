@@ -6,7 +6,7 @@ from datetime import date
 
 from api.models.schemas import ExtractRequest, ExtractResponse
 from api.services.slack_extract import SlackExtractService
-from api.utils.helpers import load_job_data, generate_job_id, save_job_data
+from api.utils.helpers import load_job_data, generate_job_id, save_job_data, is_vercel_environment, save_extract_data
 from api.auth.password_auth import verify_password
 
 router = APIRouter()
@@ -67,10 +67,15 @@ async def extract_messages(
         
         # Create a unique file name for this extraction
         extract_id = generate_job_id()
-        os.makedirs('extracts', exist_ok=True)
+        
+        # Create file path (will be used differently based on environment)
         file_path = f"extracts/{extract_id}.txt"
         
-        # Save the formatted messages to a file
+        # Create extracts directory if we're not on Vercel
+        if not is_vercel_environment():
+            os.makedirs('extracts', exist_ok=True)
+        
+        # Save the formatted messages to a file or memory
         extract_service.save_to_file(formatted_messages, file_path)
         
         # Return the response
