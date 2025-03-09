@@ -201,7 +201,11 @@
                     `;
                     
                     if (data.output_file_url) {
-                        resultHTML += `<p><strong>Download Link:</strong> <a href="${data.output_file_url}" target="_blank">Download Extracted Messages</a></p>`;
+                        const fileId = data.output_file_url.split('/').pop();
+                        resultHTML += `
+                            <p><strong>File ID:</strong> ${fileId}</p>
+                            <button id="download-file-btn" data-file-id="${fileId}" class="download-file-btn">Download Extracted Messages</button>
+                        `;
                     }
                     
                     resultDiv.innerHTML = resultHTML;
@@ -216,6 +220,59 @@
                 document.getElementById('extract-result').style.display = 'none';
             }
         });
+        
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('download-file-btn')) {
+                const fileId = event.target.getAttribute('data-file-id');
+                downloadFileWithAuth(fileId);
+            }
+        });
+        
+        async function downloadFileWithAuth(fileId) {
+            try {
+                // Get API password
+                const apiPassword = getApiPassword();
+                
+                // Create a temporary link for the download
+                const link = document.createElement('a');
+                link.href = `/api/files/${fileId}`;
+                link.download = `slack_messages_${fileId}.txt`;
+                
+                // Fetch the file with authentication
+                const response = await fetch(`/api/files/${fileId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-Password': apiPassword
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to download file');
+                }
+                
+                // Get the file content
+                const fileContent = await response.text();
+                
+                // Create a blob from the file content
+                const blob = new Blob([fileContent], { type: 'text/plain' });
+                
+                // Create a download link
+                const url = window.URL.createObjectURL(blob);
+                link.href = url;
+                
+                // Trigger the download
+                document.body.appendChild(link);
+                link.click();
+                
+                // Clean up
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+                
+            } catch (error) {
+                alert(`Error downloading file: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html>
