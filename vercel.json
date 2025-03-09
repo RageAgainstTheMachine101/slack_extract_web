@@ -11,9 +11,5 @@
       "src": "/api/(.*)",
       "dest": "api/main.py"
     }
-  ],
-  "env": {
-    "SLACK_BOT_TOKEN": "@slack_bot_token",
-    "API_PASSWORD": "@api_password"
-  }
+  ]
 }
