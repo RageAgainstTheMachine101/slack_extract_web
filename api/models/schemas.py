@@ -26,6 +26,7 @@ class ExtractResponse(BaseModel):
     status: str = Field(..., description="Status of the extraction operation")
     extracted_message_count: int = Field(..., description="Number of messages extracted")
     output_file_url: Optional[str] = Field(None, description="URL to download the extracted messages")
+    output_content_url: Optional[str] = Field(None, description="URL to access the extracted messages as JSON data (for API consumers like Slack bots)")
     messages: Optional[list] = Field(None, description="Extracted messages if inline response")
 
 

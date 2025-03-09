@@ -83,7 +83,8 @@ async def extract_messages(
             "status": "success",
             "extracted_message_count": count,
             "output_file_url": f"/api/files/{extract_id}",
-            "messages": formatted_messages[:10] if count > 0 else []  # Return first 10 messages as preview
+            "output_content_url": f"/api/files/{extract_id}/content",  
+            "messages": formatted_messages[:10] if count > 0 else []  
         }
         
     except HTTPException:
