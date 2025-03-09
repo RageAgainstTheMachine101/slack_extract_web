@@ -185,3 +185,102 @@ Within Vercel’s project settings, define:
 ## 5. Summary
 - **Backend** verifies the API password before allowing `/download` or `/extract`.
 - The new app is a backend-only solution with password protection, ensuring only authorized users can download or extract messages.
+
+---
+
+## 6. Writing and Running Tests with Pytest
+
+### 6.1 Test Structure
+
+Create a `tests/` folder in the project root:
+
+```
+slack_extractor/
+├── api/
+├── tests/
+│   ├── __init__.py
+│   ├── test_download.py
+│   ├── test_extract.py
+│   ├── conftest.py       # Common fixtures
+```
+
+### 6.2 Sample Test Code
+
+**`tests/conftest.py`**
+```python
+import pytest
+from fastapi.testclient import TestClient
+from api.main import app  # Import your FastAPI app
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+```
+
+**`tests/test_download.py`**
+```python
+import os
+
+def test_download_success(client, monkeypatch):
+    # Mock environment variable
+    monkeypatch.setenv("API_PASSWORD", "test_password")
+
+    response = client.post(
+        "/api/download",
+        json={
+            "user_id": "U123456",
+            "start_date": "2023-01-01",
+            "end_date": "2023-01-31"
+        },
+        headers={"Authorization": "Bearer test_password"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+```
+
+**`tests/test_extract.py`**
+```python
+def test_extract_failure(client, monkeypatch):
+    monkeypatch.setenv("API_PASSWORD", "test_password")
+
+    response = client.post(
+        "/api/extract",
+        json={
+            "job_id": "invalid_id",
+            "start_date": "2023-01-01",
+            "end_date": "2023-01-31"
+        },
+        headers={"Authorization": "Bearer test_password"}
+    )
+
+    assert response.status_code == 400  # Example error code
+```
+
+### 6.3 Running the Tests
+
+To run tests with `pytest`, execute the following command in the terminal:
+
+```bash
+pytest tests/
+```
+
+To see detailed output, use:
+
+```bash
+pytest -v
+```
+
+If you want to run only specific tests:
+
+```bash
+pytest tests/test_download.py
+```
+
+### 6.4 Additional Recommendations
+- Include `pytest` in your `pyproject.toml` dependencies.
+- Use `pytest-cov` for code coverage analysis:
+
+```bash
+pytest --cov=api tests/
+```

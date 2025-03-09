@@ -58,7 +58,7 @@ class SlackDownloadService:
                 self.logger.info(f"Downloaded {len(all_messages)} messages from channel {channel_id}")
                 retry_delay = 1  # Reset retry delay on success
             except SlackApiError as e:
-                if e.response.status_code == 429:
+                if hasattr(e.response, 'status_code') and e.response.status_code == 429:
                     self.logger.warning("Rate limited. Retrying...")
                     time.sleep(retry_delay)
                     retry_delay *= 2
@@ -89,35 +89,19 @@ class SlackDownloadService:
 
     def get_users_conversations(self, user_id: str) -> List[Dict[str, str]]:
         """Get all channels that a user is a member of."""
-        cache_file = f"channel_cache_{user_id}.json"
-        
-        # Try to use cached channel list if available and recent
-        if os.path.exists(cache_file):
-            try:
-                with open(cache_file, "r") as f:
-                    cache_data = json.load(f)
-                    cached_user_id = cache_data.get("user_id")
-                    cached_channels = cache_data.get("channels")
-                    cache_time = cache_data.get("timestamp", 0)
-                    
-                    # Use cache if it's for the same user and less than 1 day old
-                    if cached_user_id == user_id and time.time() - cache_time < 86400:
-                        self.logger.info("Using cached channel list")
-                        return cached_channels
-            except json.JSONDecodeError:
-                self.logger.warning("Error decoding cache file, fetching new channel list")
-
-        # Fetch channels from Slack API
         channels = []
         cursor = None
+        
+        self.logger.info(f"Fetching channels for user {user_id}")
         
         while True:
             try:
                 response = self.client.users_conversations(
                     user=user_id, 
-                    types="public_channel,private_channel", 
+                    types="public_channel", 
                     cursor=cursor
                 )
+                
                 channels.extend([{"id": channel["id"], "name": channel["name"]} for channel in response["channels"]])
                 cursor = response.get("response_metadata", {}).get("next_cursor")
                 
@@ -127,14 +111,7 @@ class SlackDownloadService:
                 self.logger.error(f"Error fetching channels for user {user_id}: {e}")
                 break
 
-        # Save to cache
-        with open(cache_file, "w") as f:
-            json.dump({
-                "user_id": user_id, 
-                "channels": channels,
-                "timestamp": time.time()
-            }, f)
-
+        self.logger.info(f"Total channels found for user {user_id}: {len(channels)}")
         return channels
 
     def add_message_metadata(self, message: Dict[str, Any], channel_id: str, channel_name: str) -> Dict[str, Any]:

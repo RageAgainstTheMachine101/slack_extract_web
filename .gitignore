@@ -64,3 +64,4 @@ coverage.xml
 jobs/
 extracts/
 *.log
+scripts/test_api.sh
